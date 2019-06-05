@@ -1,7 +1,7 @@
 #!/bin/bash 
 
-export USER_EMAIL_ADDRESS=szczypka.wojciech@gmail.com
-export CURRENT_GRANT_ID=tm2
+export USER_EMAIL_ADDRESS=XXX@XXX.XX
+export CURRENT_GRANT_ID=XXX
 
 function wread_case {
     echo "${PWD##*/}"
