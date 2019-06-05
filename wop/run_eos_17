@@ -1,0 +1,120 @@
+#!/bin/bash
+
+if [ -e STDOUT_opt ]
+	then
+	rm STDOUT_opt
+fi
+
+echo "
+*********************************************************************************
+
+		WIEN2k 17.1 struct edit to min. of EOS
+			by W.Szczypka, Nov 2017
+ 
+*********************************************************************************
+
+" >> STDOUT_opt
+
+TIME=`date +%F-%T.%N`
+
+echo "Starting time: $TIME
+--------------------------------------
+" >> STDOUT_opt
+
+# Reading variables from files
+
+export CASE_WS=`printf "${PWD##*/}"`  # taking name of active directory
+export KPT_WS=`awk 'FNR == 1 {print $9}' $CASE_WS.klist`
+export STEP_WS=$1
+
+if [ -e $CASE_WS.in1 ]
+	then
+	export RKM_WS=`awk 'FNR == 2 {print $1}' $CASE_WS.in1 | tr -d . `
+elif [ -e $CASE_WS.in1c ]
+	then
+	export RKM_WS=`awk 'FNR == 2 {print $1}' $CASE_WS.in1c | tr -d . `
+fi
+
+XC_pot_from_in0=`awk 'FNR == 1 {print $2}' $CASE_WS.in0`
+
+case $XC_pot_from_in0 in
+	XC_PBESOL) export XC_WS="pbs" ;;
+	XC_LDA) export XC_WS="lda" ;;
+	XC_PBE) export XC_WS="pbe" ;;
+	XC_WC) export XC_WS="wc" ;;
+	XC_MBJ) export XC_WS="mbj" ;;
+	XC_REVTPSS) export XC_WS="tpss" ;;
+esac
+
+echo "CASE = $CASE_WS
+RKM = $RKM_WS
+KPT = $KPT_WS
+XC = $XC_WS
+STEP = $STEP_WS
+
+Reading variables finished.
+" >> STDOUT_opt
+
+sh $HOME/wop/eos_bmf_17
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in eos_bmf !!!" >> STDOUT_opt
+	exit 1
+fi
+
+# check convergence
+
+PRESSURE_CONV='0.01'
+PRESSURE_CONVN=`awk "BEGIN {printf \"%.3f\n\", 0 - $PRESSURE_CONV}"`
+
+if [ -e $CASE_WS.outputsgroup ]
+	then
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}'`
+	else
+	x sgroup >> STDOUT_opt
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}'`
+fi
+
+echo "
+Symmetry group: $SYMM_GROUP_NO
+" >> STDOUT_opt
+
+if [ "$SYMM_GROUP_NO" -ge "195" -a "$SYMM_GROUP_NO" -le "230" ]
+	then
+	PRESSURE_0=`awk 'FNR == 28 {print $4}' $CASE_WS.outputeos`
+
+elif [ "$SYMM_GROUP_NO" -ge "75" -a "$SYMM_GROUP_NO" -le "194" ]
+	then
+	PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+elif [ "$SYMM_GROUP_NO" -ge "1" -a "$SYMM_GROUP_NO" -le "74" ]
+	then
+	PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+	else
+	echo "Unknown space group. Error in run_eos_17
+	" >> STDOUT_opt
+	exit 1
+fi
+
+# loop
+
+echo "
+------> Pressure at point 0.0: $PRESSURE_0
+------> Optimized geommetry pressure range: ( $PRESSURE_CONVN to $PRESSURE_CONV )
+" >> STDOUT_opt
+
+sh $HOME/wop/vol_tr
+
+echo "Volume files have been transfered into directory: 
+" >> STDOUT_opt
+
+TIME=`date +%F-%T.%N`
+
+echo "Total finish time: $TIME
+" >> STDOUT_opt
+		
+exit 0
+
+

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo "
+========================
+Running scf_run ...
+========================
+" >> STDOUT_opt
+
+echo ''|run_lapw -ec $EC_WS -cc $CC_WS -p >> STDOUT_opt #2>&1
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in run_lapw !!!" >> STDOUT_opt
+	exit 1
+fi
+
+TIME=`date +%F-%T.%N`
+
+echo "SCF convergence obtained.
+Finish time: $TIME
+" >> STDOUT_opt
+
+save_lapw -d rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_scf >> STDOUT_opt #2>&1
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in save_lapw !!!" >> STDOUT_opt
+	exit 1
+fi
+
+echo "SCF calculations saved.
+" >> STDOUT_opt
+

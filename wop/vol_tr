@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "
+========================
+Running vol_tr ...
+========================
+" >> STDOUT_opt
+
+mkdir -p rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_eos
+
+mv *_vol_* ./rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_eos
+mv *.outputeos ./rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_eos
+mv *.vol ./rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_eos
+
+
+TIME=`date +%F-%T.%N`
+
+echo "EOS files have been moved into new directory ( rkm${RKM_WS}_${KPT_WS}k_${XC_WS}_${STEP_WS}_eos ) .
+Finish time: $TIME
+" >> STDOUT_opt

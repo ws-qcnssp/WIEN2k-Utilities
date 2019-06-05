@@ -1,0 +1,21 @@
+#!/bin/bash
+
+EC_WS=0.00001
+CC_WS=0.00001
+STEP=10
+
+
+echo ''|run_lapw -ec $EC_WS -cc $CC_WS -p >STDOUT 2>$1
+
+TIME=`date +%F-%T.%N`
+
+echo "
+SCF convergence obtained.
+Finish time: $TIME
+" >> STDOUT_opt
+
+save_lapw -d rkm85_1000k_pbs_$STEP\_scf
+
+echo "SCF calculations saved.
+" >> STDOUT_opt
+

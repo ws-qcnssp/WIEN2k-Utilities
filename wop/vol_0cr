@@ -1,0 +1,38 @@
+#!/bin/bash
+
+echo "
+========================
+Running vol_0cr ...
+========================
+" >> STDOUT_opt
+
+save_lapw $CASE_WS\_vol___0.0 >> STDOUT_opt 2>&1
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in save_lapw !!!" >> STDOUT_opt
+	exit 1
+fi
+
+echo "Restoring *.scf file...
+" >> STDOUT_opt
+
+if [ ! -e $CASE_WS\_vol___0.0.scf ]
+	then
+	
+	if [ -e rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_scf/$CASE_WS.scf ]
+		then	
+			cp rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_scf/$CASE_WS.scf $CASE_WS\_vol___0.0.scf
+			echo "*.scf copied from rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_scf/$CASE_WS.scf" >> STDOUT_opt
+	elif [ -e rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_msr1a/$CASE_WS.scf ]
+		then
+			cp rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_msr1a/$CASE_WS.scf $CASE_WS\_vol___0.0.scf
+			echo "*.scf copied from rkm$RKM_WS\_$KPT_WS\k_$XC_WS\_$STEP_WS\_msr1a/$CASE_WS.scf" >> STDOUT_opt
+	else
+		echo "File $CASE_WS.scf does not exist anywhere." >> STDOUT_opt
+	fi
+fi
+
+echo "LAPW saved to 0.0 volume.
+" >> STDOUT_opt
+

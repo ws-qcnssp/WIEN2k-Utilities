@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo "
+========================
+Running eos_par_a ...
+========================
+" >> STDOUT_opt
+
+VOL0=$(awk 'FNR == 23 {print $2}' $CASE_WS.outputeos | bc)
+VOL1=$(awk 'FNR == 28 {print $1}' $CASE_WS.outputeos | bc)
+A1=$(awk 'FNR == 4 {print $1}' $CASE_WS.struct | bc)
+
+A0=$(python -c "print '{:.6f}'.format($A1*($VOL0/$VOL1)**(1./3))")
+
+echo "Changing cell parameters: a (cubic)
+" >> STDOUT_opt
+echo "Volume: $VOL1 --> $VOL0" >> STDOUT_opt
+echo "a: $A1 --> $A0" >> STDOUT_opt
+
+sed -i -e "s/$A1/$A0/g" $CASE_WS.struct
+
+TIME=`date +%F-%T.%N`
+
+echo "
+STRUCT file has been modified.
+Finish time: $TIME
+" >> STDOUT_opt

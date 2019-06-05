@@ -1,0 +1,230 @@
+#!/bin/bash
+
+if [ -e STDOUT_opt ]
+	then
+	rm STDOUT_opt
+fi
+
+echo "
+*********************************************************************************
+
+	Full WIEN2k 17.1 volume & atomic positions optimization procedure
+		by W.Szczypka, Jul 2016 (Ed. Aug 2017)
+ 
+*********************************************************************************
+
+" >> STDOUT_opt
+
+TIME=`date +%F-%T.%N`
+
+echo "Starting time: $TIME
+--------------------------------------
+" >> STDOUT_opt
+
+# Reading variables from files
+
+export CASE_WS=`printf "${PWD##*/}"`  # taking name of active directory
+export STEP_WS=$1
+export KPT_WS=`awk 'FNR == 1 {print $9}' $CASE_WS.klist`
+
+if [ -e $CASE_WS.in1 ]
+	then
+	export RKM_WS=`awk 'FNR == 2 {print $1}' $CASE_WS.in1 | tr -d . `
+elif [ -e $CASE_WS.in1c ]
+	then
+	export RKM_WS=`awk 'FNR == 2 {print $1}' $CASE_WS.in1c | tr -d . `
+fi
+
+XC_pot_from_in0=`awk 'FNR == 1 {print $2}' $CASE_WS.in0`
+
+case $XC_pot_from_in0 in
+	XC_PBESOL) export XC_WS="pbs" ;;
+	XC_LDA) export XC_WS="lda" ;;
+	XC_PBE) export XC_WS="pbe" ;;
+	XC_WC) export XC_WS="wc" ;;
+	XC_MBJ) export XC_WS="mbj" ;;
+	XC_REVTPSS) export XC_WS="tpss" ;;
+esac
+
+export EC_WS=$2
+export FC_WS=$3
+export CC_WS=$4
+
+echo "CASE = $CASE_WS
+RKM = $RKM_WS
+KPT = $KPT_WS
+XC = $XC_WS
+STEP = $STEP_WS
+EC = $EC_WS
+FC = $FC_WS
+CC = $CC_WS
+
+Reading variables finished.
+" >> STDOUT_opt
+
+echo "
+	--------> Step no. $STEP_WS
+" >> STDOUT_opt
+
+
+# sh $HOME/wop/ext1
+sh $HOME/wop/scf_run
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in first SCF !!!" >> STDOUT_opt
+	exit 1
+fi
+
+sh $HOME/wop/vol_0cr_17
+
+export STEP_WS=$(($STEP_WS+1))
+echo "
+	--------> Step no. $STEP_WS
+" >> STDOUT_opt
+
+sh $HOME/wop/eos_run_17
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in eos_run !!!" >> STDOUT_opt
+	exit 1
+fi
+
+sh $HOME/wop/eos_bmf_17
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in eos_bmf !!!" >> STDOUT_opt
+	exit 1
+fi
+
+# check convergence
+
+PRESSURE_CONV='0.01'
+PRESSURE_CONVN=`awk "BEGIN {printf \"%.3f\n\", 0 - $PRESSURE_CONV}"`
+
+if [ -e $CASE_WS.outputsgroup ]
+	then
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}'`
+	else
+	x sgroup >> STDOUT_opt
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}'`
+fi
+
+echo "
+Symmetry group: $SYMM_GROUP_NO
+" >> STDOUT_opt
+
+if [ "$SYMM_GROUP_NO" -ge "195" -a "$SYMM_GROUP_NO" -le "230" ]
+	then
+	PRESSURE_0=`awk 'FNR == 28 {print $4}' $CASE_WS.outputeos`
+
+elif [ "$SYMM_GROUP_NO" -ge "75" -a "$SYMM_GROUP_NO" -le "194" ]
+	then
+	PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+elif [ "$SYMM_GROUP_NO" -ge "1" -a "$SYMM_GROUP_NO" -le "74" ]
+	then
+	PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+	else
+	echo "Unknown space group. Error in run_full
+	" >> STDOUT_opt
+	exit 1
+fi
+
+# loop
+
+echo "
+------> Pressure at point 0.0: $PRESSURE_0
+------> Optimized geommetry pressure range: ( $PRESSURE_CONVN to $PRESSURE_CONV )
+" >> STDOUT_opt
+
+PRESSURE_CONV=`awk "BEGIN {printf \"%.0f\n\", 1000*$PRESSURE_CONV}"`
+PRESSURE_CONVN=`awk "BEGIN {printf \"%.0f\n\", 1000*$PRESSURE_CONVN}"`
+PRESSURE_0=`awk "BEGIN {printf \"%.0f\n\", 1000*$PRESSURE_0}"`
+
+while [ "$PRESSURE_0" -ge "$PRESSURE_CONV" -o "$PRESSURE_0" -le "$PRESSURE_CONVN" ]
+	do
+	
+	sh $HOME/wop/vol_tr
+	
+	if [ -e ./.stop_opt ]
+		then
+		echo ">>> Stop due to STOP_OPT file." >> STDOUT_opt
+		exit $?
+	fi
+
+	export STEP_WS=$(($STEP_WS+1))
+	echo "
+		--------> Step no. $STEP_WS
+	" >> STDOUT_opt
+
+	sh $HOME/wop/msr_run
+
+	if [ -e ./.stop_opt ]
+		then
+		echo ">>> Stop due to STOP_OPT file." >> STDOUT_opt
+		exit $?
+	fi
+
+	sh $HOME/wop/vol_0cr_17
+
+	export STEP_WS=$(($STEP_WS+1))
+	echo "
+		--------> Step no. $STEP_WS
+	" >> STDOUT_opt	
+
+	sh $HOME/wop/eos_run_17
+
+	sh $HOME/wop/eos_bmf_17
+
+	if [ "$SYMM_GROUP_NO" -ge "195" -a "$SYMM_GROUP_NO" -le "230" ]
+		then
+		PRESSURE_0=`awk 'FNR == 28 {print $4}' $CASE_WS.outputeos`
+
+	elif [ "$SYMM_GROUP_NO" -ge "75" -a "$SYMM_GROUP_NO" -le "194" ]
+		then
+		PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+	elif [ "$SYMM_GROUP_NO" -ge "1" -a "$SYMM_GROUP_NO" -le "74" ]
+		then
+		PRESSURE_0=`awk 'FNR == 25 {print $4}' $CASE_WS.outputeos`
+
+		else
+		echo "Unknown space group.
+		" >> STDOUT_opt
+		exit 1
+	fi
+
+	echo "
+	------> Pressure at point 0.0: $PRESSURE_0
+	" >> STDOUT_opt
+
+	PRESSURE_0=`awk "BEGIN {printf \"%.0f\n\", 1000*$PRESSURE_0}"`
+
+	if [ -e ./.stop_opt ]
+		then
+		echo ">>> Stop due to STOP_OPT file." >> STDOUT_opt
+		exit $?
+	fi
+
+done
+
+sh $HOME/wop/vol_tr
+
+PRESSURE_0=`awk "BEGIN {printf \"%.3f\n\", 0.001*$PRESSURE_0}"`
+
+echo "Pressure is converged: $PRESSURE_0 .
+Optimization finished.
+" >> STDOUT_opt
+
+TIME=`date +%F-%T.%N`
+
+echo "Total finish time: $TIME
+" >> STDOUT_opt
+		
+exit 0
+
+

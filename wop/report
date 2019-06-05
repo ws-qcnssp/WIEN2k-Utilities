@@ -1,0 +1,40 @@
+#!/bin/bash
+
+RKM_WS=$1
+KPT_WS=$2
+XC_WS=$3
+
+
+awk 'FNR==25 {print FILENAME, $0}' *_eos/*.outputeos > .report_eos_0
+
+ATOM_NUMBER=`awk 'FNR == 2 {print $2}' *.outputnn`
+ATOM_ITH='1'
+
+echo "Number of at.: $ATOM_NUMBER"
+
+MSR_DIR="Directories: rkm${RKM_WS}_${KPT_WS}k_${XC_WS}_"
+
+echo $MSR_DIR
+
+while [ $ATOM_ITH -le $ATOM_NUMBER ]
+	do
+		if [ ${#ATOM_ITH} -eq 1 ]
+			then
+				grep "ATOM  .${ATOM_ITH}:" rkm${RKM_WS}_${KPT_WS}k_${XC_WS}_*_msr1a/*.struct > .report_min_at$ATOM_ITH
+			
+		elif [ ${#ATOM_ITH} -eq 2 ]
+			then
+				grep "ATOM .${ATOM_ITH}:" rkm${RKM_WS}_${KPT_WS}k_${XC_WS}_*_msr1a/*.struct > .report_min_at$ATOM_ITH
+			
+		elif [ ${#ATOM_ITH} -eq 3 ]
+			then
+				grep "ATOM.${ATOM_ITH}:" rkm${RKM_WS}_${KPT_WS}k_${XC_WS}_*_msr1a/*.struct > .report_min_at$ATOM_ITH
+				
+		fi
+		
+		ATOM_ITH=$(($ATOM_ITH+1))
+done
+
+
+
+#grep "ATOM  -1:" rkm85_500k_pbs_*_msr1a/*.struct >> .report_min_1

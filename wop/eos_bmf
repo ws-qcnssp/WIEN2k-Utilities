@@ -1,0 +1,103 @@
+#!/bin/bash
+
+echo "
+========================
+Running eos_bmf ...
+========================
+" >> STDOUT_opt
+
+if [ -e $CASE_WS.vol ]
+	then
+	rm $CASE_WS.vol
+fi
+
+# case.vol build
+ENE_part=`grepline :ENE "*vol__-5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol__-5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol__-2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol__-2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___0.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___0.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+# case.vol build end
+
+printf '0' | x eosfit >> STDOUT_opt  2>&1
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in x eosfit !!!" >> STDOUT_opt
+	exit 1
+fi
+
+echo "EOS calculated." >> STDOUT_opt
+
+if [ -e $CASE_WS.outputsgroup ]
+	then
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}' | bc`
+	else
+	x sgroup
+	SYMM_GROUP_NO=`grep "Number and name of space group" $CASE_WS.outputsgroup | awk 'FNR == 1 {print $7}' | bc`
+fi
+
+echo "Symmetry group found in eos_bmf: $SYMM_GROUP_NO
+" >> STDOUT_opt
+
+IF_CUBIC=`awk 'FNR == 10 {print $1}' $CASE_WS.outputeos`
+
+if [ "$IF_CUBIC" == "cubic" ]
+	then
+	sh $HOME/wop/eos_par_a
+	echo "var a
+	" >> STDOUT_opt
+
+elif [ "$SYMM_GROUP_NO" -ge "195" -a "$SYMM_GROUP_NO" -le "230" ]
+	then
+	sh $HOME/wop/eos_par_a
+	echo "var a
+	" >> STDOUT_opt
+
+elif [ "$SYMM_GROUP_NO" -ge "75" -a "$SYMM_GROUP_NO" -le "194" ]
+	then
+	sh $HOME/wop/eos_par_ac
+	echo "var ac
+	" >> STDOUT_opt
+
+elif [ "$SYMM_GROUP_NO" -ge "1" -a "$SYMM_GROUP_NO" -le "74" ]
+	then
+	sh $HOME/wop/eos_par_abc
+	echo "var abc
+	" >> STDOUT_opt
+
+	else
+	echo "Unknown space group.
+	" >> STDOUT_opt
+	exit 1
+fi
+
+if [ $? -eq 1 ]
+	then
+	echo "!!! Error in STRUCT file modification !!!" >> STDOUT_opt
+	exit 1
+fi
+
+
+
+

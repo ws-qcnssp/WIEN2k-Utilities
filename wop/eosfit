@@ -1,0 +1,33 @@
+#!/bin/bash
+
+CASE_WS=$1
+
+# case.vol build
+ENE_part=`grepline :ENE "*vol__-5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol__-5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol__-2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol__-2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___0.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___0.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___2.5.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+ENE_part=`grepline :ENE "*vol___5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $9}'`
+VOL_part=`grepline :VOL "*vol___5.0.scf" 1 | tail -n +2 | awk 'FNR == 1 {print $7}'`
+
+echo "  $VOL_part   $ENE_part" >> $CASE_WS.vol
+
+# case.vol build end
+
+printf '0' | x eosfit >> STDOUT_opt  2>&1

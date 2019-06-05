@@ -1,0 +1,17 @@
+#!/bin/bash
+STEP=$1
+
+# RKmax and k-points reading
+# end
+
+mkdir -p rkm85_500k_pbs_$STEP\_eos
+
+mv *_vol_* ./rkm85_500k_pbs_$STEP\_eos
+mv *.outputeos ./rkm85_500k_pbs_$STEP\_eos
+
+TIME=`date +%F-%T.%N`
+
+echo "
+EOS files have been moved into new directory.
+Finish time: $TIME
+" >> STDOUT_opt
