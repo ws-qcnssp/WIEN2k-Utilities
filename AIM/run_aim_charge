@@ -1,0 +1,27 @@
+#!/bin/bash
+
+CASE=${PWD##*/}
+
+if [ ! -d aim_out ]
+then
+    mkdir aim_out
+fi
+
+for ATOM in "$@"
+do
+  echo "Atom no.: $ATOM"
+  echo "Atom checked: $ATOM" >> aim_report
+  ./prep_inaim_charge $ATOM > $CASE.inaim
+  x aim
+  cat $CASE.outputaim | grep :RHOTOT >> aim_report
+  cat $CASE.outputaim | grep :VOLUME >> aim_report
+  if [ ! -d aim_out/INT_$ATOM ]
+  then
+	mkdir aim_out/INT_$ATOM
+  else
+	rm aim_out/INT_$ATOM/$CASE.inaim
+	rm aim_out/INT_$ATOM/$CASE.outputaim
+  fi
+  mv $CASE.inaim aim_out/INT_$ATOM/
+  mv $CASE.outputaim aim_out/INT_$ATOM/
+done

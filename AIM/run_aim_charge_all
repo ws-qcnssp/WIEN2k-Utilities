@@ -1,0 +1,32 @@
+#!/bin/bash
+
+CASE=${PWD##*/}
+MULT_LIST=$(grep "MULT" $CASE.struct | cut -c 16-17 | awk '{print $1}')
+ATOM=1
+if [ ! -d aim_out ]
+then
+    mkdir aim_out
+fi
+echo "Multiplicity list:"
+echo "$MULT_LIST"
+
+echo "Starting loop:"
+for ATOM_MULT in $(echo "$MULT_LIST")
+do
+  echo "Atom no.: $ATOM"
+  echo "Atom checked: $ATOM" >> aim_report
+  ./prep_inaim_charge $ATOM > $CASE.inaim
+  x aim
+  cat $CASE.outputaim | grep :RHOTOT >> aim_report
+  cat $CASE.outputaim | grep :VOLUME >> aim_report
+  if [ ! -d aim_out/INT_$ATOM ]
+  then
+	mkdir aim_out/INT_$ATOM
+  else
+	rm aim_out/INT_$ATOM/$CASE.inaim
+	rm aim_out/INT_$ATOM/$CASE.outputaim
+  fi
+  mv $CASE.inaim aim_out/INT_$ATOM/
+  mv $CASE.outputaim aim_out/INT_$ATOM/
+  ATOM=$(($ATOM+$ATOM_MULT))
+done

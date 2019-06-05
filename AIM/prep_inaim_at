@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Structure of file:
+# CRIT
+# 1 # index of the atom (counting multiplicity)
+# ALL # TWO/THRE/ALL /FOUR
+# 3 3 3 # x,y,z nshells (of unit cells)
+# END
+
+ATOM_NO=$1
+
+echo "CRIT
+$ATOM_NO
+ALL
+3 3 3
+END"

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Structure of file:
+# SURF
+# 3 atom in center of surface (including MULT)
+# 40 0.0 3.1415926536 theta, 40 points, from zero to pi
+# 40 -0.7853981634 2.3561944902 phi
+# 0.07 0.8 2 step along gradient line, rmin, check
+# 1.65 0.1 initial R for search, step (a.u)
+# 3 3 3 nshell
+# IRHO "INTEGRATE" rho
+# WEIT WEIT (surface weights from case.surf), NOWEIT
+# 30 30 radial points outside min(RMIN,RMT)
+# END
+
+ATOM_NO=$1
+
+echo "SURF
+$ATOM_NO
+40 0.0 3.1415926536 
+40 -0.7853981634 2.3561944902 
+0.07 0.8 2 
+1.65 0.1 
+3 3 3 
+IRHO 
+WEIT WEIT 
+30 30 
+END"
